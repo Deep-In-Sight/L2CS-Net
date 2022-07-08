@@ -2,3 +2,6 @@ datasets/
 evaluation/
 output/
 models/
+*checkpoint.ipynb
+*.pyc
+__pycache*
