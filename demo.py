@@ -32,6 +32,9 @@ def parse_args():
         '--cam',dest='cam_id', help='Camera device id to use [0]',  
         default=0, type=int)
     parser.add_argument(
+        '--vid',dest='fn_vid', help='video file',  
+        default=None, type=str)
+    parser.add_argument(
         '--arch',dest='arch',help='Network architecture, can be: ResNet18, ResNet34, ResNet50, ResNet101, ResNet152',
         default='ResNet50', type=str)
 
@@ -61,11 +64,14 @@ if __name__ == '__main__':
     cudnn.enabled = True
     arch=args.arch
     batch_size = 1
-    cam = args.cam_id
+    print(args.fn_vid)
+    #if args.fn_vid
+    if args.fn_vid is not None:
+        cam = args.fn_vid 
+    else:
+        cam = args.cam_id
     gpu = select_device(args.gpu_id, batch_size=batch_size)
     snapshot_path = args.snapshot
-   
-    
 
     transformations = transforms.Compose([
         transforms.Resize(448),
