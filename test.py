@@ -13,42 +13,29 @@ import datasets
 from utils import select_device, natural_keys, gazeto3d, angular
 from model import L2CS
 
-
-
-
-
-
-
 def parse_args():
     """Parse input arguments."""
     parser = argparse.ArgumentParser(
         description='Gaze estimation using L2CSNet .')
-     # Gaze360
-    parser.add_argument(
-        '--gaze360image_dir', dest='gaze360image_dir', help='Directory path for gaze images.',
-        default='datasets/Gaze360/Image', type=str)
-    parser.add_argument(
-        '--gaze360label_dir', dest='gaze360label_dir', help='Directory path for gaze labels.',
-        default='datasets/Gaze360/Label/test.label', type=str)
     # NIA2022
     parser.add_argument(
-        '--nia2022image_dir', dest='nia2022image_dir', help='Directory path for gaze images.',
+        '--image_dir', dest='image_dir', help='Directory path for gaze images.',
         default='datasets/nia2022/Image', type=str)
     parser.add_argument(
-        '--nia2022label_dir', dest='nia2022label_dir', help='Directory path for gaze labels.',
+        '--label_dir', dest='label_dir', help='Directory path for gaze labels.',
         default='datasets/nia2022/Label/train.label', type=str)
 
     # Important args -------------------------------------------------------------------------------------------------------
     # ----------------------------------------------------------------------------------------------------------------------
     parser.add_argument(
-        '--dataset', dest='dataset', help='gaze360, mpiigaze',
-        default= "gaze360", type=str)
+        '--dataset', dest='dataset', help='nia2022',
+        default= "nia2022", type=str)
     parser.add_argument(
         '--snapshot', dest='snapshot', help='Path to the folder contains models.', 
-        default='output/snapshots/L2CS-gaze360-_loader-180-4-lr', type=str)
+        default='output/snapshots/L2CS-nia2022-_loader-180-4-lr', type=str)
     parser.add_argument(
         '--evalpath', dest='evalpath', help='path for the output evaluating gaze test.',
-        default="evaluation/L2CS-gaze360-_loader-180-4-lr", type=str)
+        default="evaluation/L2CS-nia2022-_loader-180-4-lr", type=str)
     parser.add_argument(
         '--gpu',dest='gpu_id', help='GPU device id to use [0]',
         default="0", type=str)
@@ -102,24 +89,19 @@ if __name__ == '__main__':
             std=[0.229, 0.224, 0.225]
         )
     ])
-
-
     
     if data_set=="nia2022":
         
-        gaze_dataset=datasets.NIA2022(args.nia2022label_dir,args.nia2022image_dir, transformations, 180, 4, train=False)
+        gaze_dataset=datasets.NIA2022(args.label_dir,args.image_dir, transformations, 180, 4, train=False)
         test_loader = torch.utils.data.DataLoader(
             dataset=gaze_dataset,
             batch_size=batch_size,
             shuffle=False,
             num_workers=4,
-            pin_memory=True)
-
-        
+            pin_memory=True)      
 
         if not os.path.exists(evalpath):
             os.makedirs(evalpath)
-
 
         # list all epochs for testing
         folder = os.listdir(snapshot_path)
@@ -144,8 +126,7 @@ if __name__ == '__main__':
                 idx_tensor = [idx for idx in range(90)]
                 idx_tensor = torch.FloatTensor(idx_tensor).cuda(gpu)
                 avg_error = .0
-                
-                
+                                
                 with torch.no_grad():           
                     for j, (images, labels, cont_labels, name) in enumerate(test_loader):
                         images = Variable(images).cuda(gpu)
@@ -153,14 +134,12 @@ if __name__ == '__main__':
 
                         label_pitch = cont_labels[:,0].float()*np.pi/180
                         label_yaw = cont_labels[:,1].float()*np.pi/180
-                        
 
                         gaze_pitch, gaze_yaw = model(images)
                         
                         # Binned predictions
                         _, pitch_bpred = torch.max(gaze_pitch.data, 1)
                         _, yaw_bpred = torch.max(gaze_yaw.data, 1)
-                        
             
                         # Continuous predictions
                         pitch_predicted = softmax(gaze_pitch)
@@ -174,9 +153,7 @@ if __name__ == '__main__':
                         yaw_predicted = yaw_predicted*np.pi/180
 
                         for p,y,pl,yl in zip(pitch_predicted,yaw_predicted,label_pitch,label_yaw):
-                            avg_error += angular(gazeto3d([p,y]), gazeto3d([pl,yl]))
-                        
-        
+                            avg_error += angular(gazeto3d([p,y]), gazeto3d([pl,yl]))        
                     
                 x = ''.join(filter(lambda i: i.isdigit(), epochs))
                 epoch_list.append(x)
