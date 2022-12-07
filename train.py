@@ -189,7 +189,8 @@ if __name__ == '__main__':
         ], args.lr)
        
 
-        configuration = f"\ntrain configuration, gpu_id={args.gpu_id}, batch_size={batch_size}, model_arch={args.arch}\nStart testing dataset={data_set}, loader={len(train_loader_gaze)}------------------------- \n"
+        data_set2 = "NIA2022"
+        configuration = f"\ntrain configuration, gpu_id={args.gpu_id}, batch_size={batch_size}, model_arch={args.arch}\nStart testing dataset={data_set2}, loader={len(train_loader_gaze)}------------------------- \n"
         print(configuration)
         for epoch in range(num_epochs):
             sum_loss_pitch_gaze = sum_loss_yaw_gaze = iter_gaze = 0
