@@ -18,6 +18,53 @@ from PIL import Image, ImageOps
 from face_detection import RetinaFace
 from model import L2CS
 
+from loader import FileVideoStream
+import threading
+
+class VideoCaptureTreading:
+    def __init__(self, src=0, width=640, height=480):
+        self.src = src
+        self.cap = cv2.VideoCapture(self.src)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        self.grabbed, self.frame = self.cap.read()
+        self.started = False
+        self.read_lock = threading.Lock()
+
+    def set(self, var1, var2):
+        self.cap.set(var1, var2)
+
+    def start(self):
+        if self.started:
+            print('[!] Threaded video capturing has already been started.')
+            return None
+        self.started = True
+        self.thread = threading.Thread(target=self.update, args=())
+        self.thread.start()
+        return self
+
+    def update(self):
+        while self.started:
+            grabbed, frame = self.cap.read()
+            if not grabbed:
+                self.started = False
+            with self.read_lock:
+                self.grabbed = grabbed
+                self.frame = frame
+
+    def read(self):
+        with self.read_lock:
+            frame = self.frame.copy()
+            grabbed = self.grabbed
+        return grabbed, frame
+
+    def stop(self):
+        self.started = False
+        self.thread.join()
+
+    def __exit__(self, exec_type, exc_value, traceback):
+        self.cap.release()
+
 def parse_args():
     """Parse input arguments."""
     parser = argparse.ArgumentParser(
@@ -30,7 +77,7 @@ def parse_args():
         default='models/Gaze360/L2CSNet_gaze360.pkl', type=str)
     parser.add_argument(
         '--vids',dest='fn_vids', help='video file',  
-        default=None, type=str)
+        default="1122.txt", type=str)
     parser.add_argument(
         '--arch',dest='arch',help='Network architecture, can be: ResNet18, ResNet34, ResNet50, ResNet101, ResNet152',
         default='ResNet50', type=str)
@@ -58,7 +105,9 @@ def getArch(arch,bins):
 
 def dump_pitch_yaw(fn, model):
     #print("fn", fn)
-    cap = cv2.VideoCapture(fn)
+    cap = FileVideoStream(fn).start()
+    time.sleep(0.1)
+    #cap = cv2.VideoCapture(fn)
 
     out_dir = "/".join(fn.split("/")[:-2])
     out_dir += "/rpy/"
@@ -69,21 +118,26 @@ def dump_pitch_yaw(fn, model):
     fnfn = fn.split("/")[-1].replace(".mp4", ".txt").replace("_rgb_", "_rpy_")
 
     # Check if the webcam is opened correctly
-    if not cap.isOpened():
-        raise IOError("Cannot open webcam")
+    #if not cap.isOpened():
+    #    raise IOError("Cannot open webcam")
 
     with torch.no_grad():
         with open(out_dir + fnfn, "w") as f:
             f.write("_py in degrees\n")
             start_fps = time.time()
-            while True:
-                success, frame = cap.read()    
-            
-                if not success: break
+
+            while cap.more():
+                frame = cap.read()
+                if frame is None:
+                    break
+                #if not success: break
 
                 faces = detector(frame)
                 if faces is not None: 
+                    #cap.stop()
+                    #return faces
                     for box, landmarks, score in faces:
+                        
                         if score < .95:
                             continue
                         x_min=int(max([0, box[0]]))
@@ -127,7 +181,11 @@ def dump_pitch_yaw(fn, model):
                         yaw_predicted= yaw_predicted.cpu().detach().numpy()#* np.pi/180.0
 
                         #print(pitch_predicted,yaw_predicted)
-                        f.write(f"{pitch_predicted:.3f}   {yaw_predicted:.3f}\n")
+                        f.write(f"{pitch_predicted:.3f}   {yaw_predicted:.3f}")
+                        f.write(f"  {box[0]:.3f}   {box[1]:.3f}   {box[2]:.3f}   {box[3]:.3f}")
+                        for lr in landmarks.ravel():
+                            f.write(f"  {lr:.3f}")
+                        f.write(f"  {score:.2f}\n")
                         #draw_gaze(x_min,y_min,bbox_width, bbox_height,frame,(pitch_predicted,yaw_predicted),color=(0,0,255))
                         #cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0,255,0), 1)
                 #myFPS = 1.0 / (time.time() - start_fps)
@@ -140,7 +198,8 @@ def dump_pitch_yaw(fn, model):
                 #success,frame = cap.read()
             myFPS = 300.0 / (time.time() - start_fps)
             print("FPS:", myFPS)
-        cap.release()
+        #print("Video getter", cap.cnt)
+        cap.stop()
         
 if __name__ == '__main__':
     args = parse_args()
@@ -180,6 +239,7 @@ if __name__ == '__main__':
         vid_list = ll.splitlines()
 
     for fn in vid_list:
-        dump_pitch_yaw(fn, model)
+        print("fn", fn)
+        lmks = dump_pitch_yaw(fn, model)
   
 
