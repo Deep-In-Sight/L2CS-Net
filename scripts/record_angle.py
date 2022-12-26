@@ -12,13 +12,13 @@ import torch.backends.cudnn as cudnn
 import torchvision
 
 from PIL import Image
-from utils import select_device, draw_gaze
+from l2cs.utils import select_device, draw_gaze
 from PIL import Image, ImageOps
 
 from face_detection import RetinaFace
-from model import L2CS
+from l2cs.model import L2CS
 
-from loader import FileVideoStream
+from l2cs.loader import FileVideoStream
 import threading
 
 torch.set_num_threads(4)

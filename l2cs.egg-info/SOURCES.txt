@@ -1,0 +1,12 @@
+LICENSE
+README.md
+setup.py
+l2cs/datasets.py
+l2cs/loader.py
+l2cs/model.py
+l2cs/utils.py
+l2cs.egg-info/PKG-INFO
+l2cs.egg-info/SOURCES.txt
+l2cs.egg-info/dependency_links.txt
+l2cs.egg-info/not-zip-safe
+l2cs.egg-info/top_level.txt

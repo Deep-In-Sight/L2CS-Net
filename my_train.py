@@ -11,9 +11,9 @@ from torchvision import transforms
 import torch.backends.cudnn as cudnn
 import torchvision
 
-import datasets
-from model import L2CS
-from utils import select_device
+import l2cs.datasets as datasets
+from l2cs.model import L2CS
+from l2cs.utils import select_device
 
 
 def parse_args():

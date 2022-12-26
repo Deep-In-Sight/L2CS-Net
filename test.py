@@ -9,9 +9,9 @@ from torchvision import transforms
 import torch.backends.cudnn as cudnn
 import torchvision
 
-import datasets
-from utils import select_device, natural_keys, gazeto3d, angular
-from model import L2CS
+import l2cs.datasets as datasets
+from l2cs.utils import select_device, natural_keys, gazeto3d, angular
+from l2cs.model import L2CS
 
 def parse_args():
     """Parse input arguments."""
