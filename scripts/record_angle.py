@@ -1,6 +1,5 @@
 import argparse
 import os 
-import numpy as np
 import cv2
 import time
 
@@ -12,8 +11,8 @@ import torch.backends.cudnn as cudnn
 import torchvision
 
 from PIL import Image
-from l2cs.utils import select_device, draw_gaze
-from PIL import Image, ImageOps
+from l2cs.utils import select_device
+from PIL import Image
 
 from face_detection import RetinaFace
 from l2cs.model import L2CS
