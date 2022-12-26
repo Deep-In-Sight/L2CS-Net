@@ -194,10 +194,10 @@ class NIA2022(Dataset):
         line = line.strip().split(" ")
 
         face = line[0]
-        lefteye = line[1]
-        righteye = line[2]
-        name = line[3]
-        gaze2d = line[5]
+        #lefteye = line[1]
+        #righteye = line[2]
+        name = line[1]
+        gaze2d = line[2]
         label = np.array(gaze2d.split(",")).astype("float")
         label = torch.from_numpy(label).type(torch.FloatTensor)
 

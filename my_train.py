@@ -153,8 +153,7 @@ if __name__ == '__main__':
             load_filtered_state_dict(model, model_zoo.load_url(pre_url))
         else:
             saved_state_dict = torch.load(args.snapshot)
-            model.load_state_dict(saved_state_dict)
-        
+            model.load_state_dict(saved_state_dict)        
         
         model.cuda(gpu)
         dataset=datasets.NIA2022(args.nia2022label_dir, args.nia2022image_dir, transformations, 180, 4)
@@ -179,7 +178,6 @@ if __name__ == '__main__':
         idx_tensor = [idx for idx in range(90)]
         idx_tensor = Variable(torch.FloatTensor(idx_tensor)).cuda(gpu)
         
-
         # Optimizer gaze
         optimizer_gaze = torch.optim.Adam([
             {'params': get_ignored_params(model), 'lr': 0},

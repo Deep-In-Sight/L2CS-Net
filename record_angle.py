@@ -21,6 +21,8 @@ from model import L2CS
 from loader import FileVideoStream
 import threading
 
+torch.set_num_threads(4)
+
 class VideoCaptureTreading:
     def __init__(self, src=0, width=640, height=480):
         self.src = src
