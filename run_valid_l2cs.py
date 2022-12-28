@@ -134,9 +134,7 @@ if __name__ == '__main__':
                 idx_tensor = [idx for idx in range(90)]
                 idx_tensor = torch.FloatTensor(idx_tensor).cuda(gpu)
                 avg_error = .0
-                avg_pitch_error = .0
-                avg_yaw_error = .0
-                                
+                error_1000 = 0.0  
                 with torch.no_grad():           
                     for j, (images, labels, cont_labels, name) in enumerate(test_loader):
                         images = Variable(images).cuda(gpu)
@@ -166,10 +164,11 @@ if __name__ == '__main__':
                             avg_error += angular(gazeto3d([p,y]), gazeto3d([pl,yl]))
 
                         if (j+1) % 1000 == 0:
-                            print('Iter [%d/%d] Losses: '
+                            print('Iter [%d/%d] This error %.4f, '
                                 'Mean Angular Error %.4f' % (
                                     j+1,
                                     len(dataset)//batch_size,
+                                    angular(gazeto3d([p,y]), gazeto3d([pl,yl])),
                                     avg_error/total
                                     #sum_loss_pitch_gaze/iter_gaze,
                                     #sum_loss_yaw_gaze/iter_gaze
