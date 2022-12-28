@@ -29,15 +29,15 @@ def parse_args():
     # NIA2022
     parser.add_argument(
         '--nia2022image_dir', dest='nia2022image_dir', help='Directory path for gaze images.',
-        default='datasets/nia2022/Image', type=str)
+        default='../data/l2cs_data/Image', type=str)
     parser.add_argument(
         '--nia2022label_dir', dest='nia2022label_dir', help='Directory path for gaze labels.',
-        default='datasets/nia2022/Label/train.label', type=str)
+        default='../data/l2cs_data/Label/train.label', type=str)
 
     # Important args -------------------------------------------------------------------------------------------------------
     # ----------------------------------------------------------------------------------------------------------------------
     parser.add_argument(
-        '--dataset', dest='dataset', help='mpiigaze, rtgene, gaze360, ethgaze',
+        '--dataset', dest='dataset', help='nia2022, gaze360',
         default= "nia2022", type=str)
     parser.add_argument(
         '--output', dest='output', help='Path of output models.',
@@ -138,7 +138,7 @@ if __name__ == '__main__':
     
     
     transformations = transforms.Compose([
-        transforms.Resize(448),
+        transforms.Resize((448,448)),
         transforms.ToTensor(),
         transforms.Normalize(
             mean=[0.485, 0.456, 0.406],
@@ -204,6 +204,7 @@ if __name__ == '__main__':
                 label_yaw_cont_gaze = Variable(cont_labels_gaze[:, 1]).cuda(gpu)
 
                 pitch, yaw = model(images_gaze)
+                #print("pitch", pitch, "yaw", yaw)
 
                 # Cross entropy loss
                 loss_pitch_gaze = criterion(pitch, label_pitch_gaze)
