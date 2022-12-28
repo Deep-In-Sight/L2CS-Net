@@ -1,13 +1,9 @@
 import os
 import numpy as np
-import cv2
-
-
 import torch
 from torch.utils.data.dataset import Dataset
 from torchvision import transforms
 from PIL import Image, ImageFilter
-
 
 class Gaze360(Dataset):
     def __init__(self, path, root, transform, angle, binwidth, train=True):

@@ -13,6 +13,8 @@ import l2cs.datasets as datasets
 from l2cs.utils import select_device, natural_keys, gazeto3d, angular
 from l2cs.model import L2CS
 
+from time import time
+
 def parse_args():
     """Parse input arguments."""
     parser = argparse.ArgumentParser(
@@ -20,10 +22,10 @@ def parse_args():
     # NIA2022
     parser.add_argument(
         '--image_dir', dest='image_dir', help='Directory path for gaze images.',
-        default='datasets/nia2022/Image', type=str)
+        default='/data/l2cs_data/Image', type=str)
     parser.add_argument(
         '--label_dir', dest='label_dir', help='Directory path for gaze labels.',
-        default='datasets/nia2022/Label/train.label', type=str)
+        default='/data/l2cs_data/Label', type=str)
 
     # Important args -------------------------------------------------------------------------------------------------------
     # ----------------------------------------------------------------------------------------------------------------------
@@ -32,16 +34,16 @@ def parse_args():
         default= "nia2022", type=str)
     parser.add_argument(
         '--snapshot', dest='snapshot', help='Path to the folder contains models.', 
-        default='output/snapshots/L2CS-nia2022-_loader-180-4-lr', type=str)
+        default='models/trained.pth', type=str)
     parser.add_argument(
         '--evalpath', dest='evalpath', help='path for the output evaluating gaze test.',
-        default="evaluation/L2CS-nia2022-_loader-180-4-lr", type=str)
+        default="evaluation/L2CS-nia2022", type=str)
     parser.add_argument(
         '--gpu',dest='gpu_id', help='GPU device id to use [0]',
         default="0", type=str)
     parser.add_argument(
         '--batch_size', dest='batch_size', help='Batch size.',
-        default=100, type=int)
+        default=16, type=int)
     parser.add_argument(
         '--arch', dest='arch', help='Network architecture, can be: ResNet18, ResNet34, [ResNet50], ''ResNet101, ResNet152, Squeezenet_1_0, Squeezenet_1_1, MobileNetV2',
         default='ResNet50', type=str)
@@ -91,7 +93,10 @@ if __name__ == '__main__':
     ])
     
     if data_set=="nia2022":
-        
+        t_ini = time()
+        print("Start testing dataset=nia2022----------------------------------------")
+        print("test configuration = gpu_id={}, batch_size={}, model_arch={}".format(gpu, batch_size, arch))
+        print("Starting at: ", t_ini, "s")
         gaze_dataset=datasets.NIA2022(args.label_dir,args.image_dir, transformations, 180, 4, train=False)
         test_loader = torch.utils.data.DataLoader(
             dataset=gaze_dataset,
@@ -161,6 +166,7 @@ if __name__ == '__main__':
                 loger = f"[{epochs}---{args.dataset}] Total Num:{total},MAE:{avg_error/total}\n"
                 outfile.write(loger)
                 print(loger)
+        print("Done in", time()-t_ini, "s")
         
         fig = plt.figure(figsize=(14, 8))        
         plt.xlabel('epoch')

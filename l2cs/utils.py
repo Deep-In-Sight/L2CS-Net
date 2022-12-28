@@ -1,17 +1,11 @@
 import numpy as np
 import torch
-#import torch.nn as nn
 import os
-#import scipy.io as sio
 import cv2
 import math
-#from math import cos, sin
 from pathlib import Path
 import subprocess
 import re
-#from model import L2CS
-#import torchvision
-#import sys
 
 def atoi(text):
     return int(text) if text.isdigit() else text
