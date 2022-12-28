@@ -13,7 +13,8 @@ import l2cs.datasets as datasets
 from l2cs.utils import select_device, natural_keys, gazeto3d, angular
 from l2cs.model import L2CS
 
-from time import time
+from datetime import datetime
+
 
 def parse_args():
     """Parse input arguments."""
@@ -34,7 +35,7 @@ def parse_args():
         default= "nia2022", type=str)
     parser.add_argument(
         '--snapshot', dest='snapshot', help='Path to the folder contains models.', 
-        default='models/trained.pth', type=str)
+        default='models/', type=str)
     parser.add_argument(
         '--evalpath', dest='evalpath', help='path for the output evaluating gaze test.',
         default="evaluation/L2CS-nia2022", type=str)
@@ -91,12 +92,14 @@ if __name__ == '__main__':
             std=[0.229, 0.224, 0.225]
         )
     ])
-    
+    # datetime object containing current date and time
+    now = datetime.now()
+    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+
     if data_set=="nia2022":
-        t_ini = time()
         print("Start testing dataset=nia2022----------------------------------------")
         print("test configuration = gpu_id={}, batch_size={}, model_arch={}".format(gpu, batch_size, arch))
-        print("Starting at: ", t_ini, "s")
+        print("Starting at: ", dt_string)
         dataset=datasets.NIA2022(args.label_dir,args.image_dir, transformations, 180, 4, train=False)
         test_loader = torch.utils.data.DataLoader(
             dataset=dataset,
@@ -172,16 +175,10 @@ if __name__ == '__main__':
                                 )                    
                 x = ''.join(filter(lambda i: i.isdigit(), epochs))
                 avg_MAE.append(avg_error/total)
-                loger = f"[---{args.dataset}] Total Num:{total},MAE:{avg_error/total}\n"
+                print(f"[---{args.dataset}] Total Num:{total},MAE:{avg_error/total}\n")
                 #outfile.write(loger)
-                p#rint(loger)
-        print("Done in", time()-t_ini, "s")
-        
-        # fig = plt.figure(figsize=(14, 8))        
-        # plt.xlabel('epoch')
-        # plt.ylabel('avg')
-        # plt.title('Gaze angular error')
-        # plt.legend()
-        # plt.plot(epoch_list, avg_MAE, color='k', label='mae')
-        # fig.savefig(os.path.join(evalpath,data_set+".png"), format='png')
-        # plt.show()
+                #print(loger)
+
+        now = datetime.now()
+        dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+        print("done at =", dt_string)
