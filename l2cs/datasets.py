@@ -1,9 +1,13 @@
 import os
 import numpy as np
+import cv2
+
+
 import torch
 from torch.utils.data.dataset import Dataset
 from torchvision import transforms
 from PIL import Image, ImageFilter
+
 
 class Gaze360(Dataset):
     def __init__(self, path, root, transform, angle, binwidth, train=True):
@@ -164,7 +168,6 @@ class NIA2022(Dataset):
         if isinstance(path, list):
             for i in path:
                 with open(i) as f:
-                    print("here")
                     line = f.readlines()
                     line.pop(0)
                     self.lines.extend(line)
@@ -174,9 +177,10 @@ class NIA2022(Dataset):
                 lines.pop(0)
                 self.orig_list_len = len(lines)
                 for line in lines:
-                    gaze2d = line.strip().split(" ")[5]
+                    #print(line)
+                    gaze2d = line.strip().split(" ")[2]
                     label = np.array(gaze2d.split(",")).astype("float")
-                    if abs((label[0]*180/np.pi)) <= angle and abs((label[1]*180/np.pi)) <= angle:
+                    if abs((label[0])) <= angle and abs((label[1])) <= angle:
                         self.lines.append(line)
                     
                         
@@ -197,8 +201,8 @@ class NIA2022(Dataset):
         label = np.array(gaze2d.split(",")).astype("float")
         label = torch.from_numpy(label).type(torch.FloatTensor)
 
-        pitch = label[0]* 180 / np.pi
-        yaw = label[1]* 180 / np.pi
+        pitch = label[0]#* 180 / np.pi
+        yaw = label[1]#* 180 / np.pi
 
         img = Image.open(os.path.join(self.root, face))
 
@@ -208,7 +212,7 @@ class NIA2022(Dataset):
         # img=torch.from_numpy(fimg).type(torch.FloatTensor)
 
         if self.transform:
-            img = self.transform(img)        
+            img = self.transform(img)
         
         # Bin values
         bins = np.array(range(-1*self.angle, self.angle, self.binwidth))
