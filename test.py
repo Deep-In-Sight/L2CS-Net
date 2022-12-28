@@ -13,8 +13,6 @@ import l2cs.datasets as datasets
 from l2cs.utils import select_device, natural_keys, gazeto3d, angular
 from l2cs.model import L2CS
 
-from time import time
-
 def parse_args():
     """Parse input arguments."""
     parser = argparse.ArgumentParser(
@@ -22,10 +20,10 @@ def parse_args():
     # NIA2022
     parser.add_argument(
         '--image_dir', dest='image_dir', help='Directory path for gaze images.',
-        default='/data/l2cs_data/Image', type=str)
+        default='../data/l2cs_data/Image', type=str)
     parser.add_argument(
         '--label_dir', dest='label_dir', help='Directory path for gaze labels.',
-        default='/data/l2cs_data/Label/valid.label', type=str)
+        default='../data/l2cs_data/Label/train.label', type=str)
 
     # Important args -------------------------------------------------------------------------------------------------------
     # ----------------------------------------------------------------------------------------------------------------------
@@ -34,16 +32,16 @@ def parse_args():
         default= "nia2022", type=str)
     parser.add_argument(
         '--snapshot', dest='snapshot', help='Path to the folder contains models.', 
-        default='models/trained.pth', type=str)
+        default='output/snapshots/L2CS-nia2022-_loader-180-4-lr', type=str)
     parser.add_argument(
         '--evalpath', dest='evalpath', help='path for the output evaluating gaze test.',
-        default="evaluation/L2CS-nia2022", type=str)
+        default="evaluation/L2CS-nia2022-_loader-180-4-lr", type=str)
     parser.add_argument(
         '--gpu',dest='gpu_id', help='GPU device id to use [0]',
         default="0", type=str)
     parser.add_argument(
         '--batch_size', dest='batch_size', help='Batch size.',
-        default=1, type=int)
+        default=100, type=int)
     parser.add_argument(
         '--arch', dest='arch', help='Network architecture, can be: ResNet18, ResNet34, [ResNet50], ''ResNet101, ResNet152, Squeezenet_1_0, Squeezenet_1_1, MobileNetV2',
         default='ResNet50', type=str)
@@ -93,10 +91,7 @@ if __name__ == '__main__':
     ])
     
     if data_set=="nia2022":
-        t_ini = time()
-        print("Start testing dataset=nia2022----------------------------------------")
-        print("test configuration = gpu_id={}, batch_size={}, model_arch={}".format(gpu, batch_size, arch))
-        print("Starting at: ", t_ini, "s")
+        
         dataset=datasets.NIA2022(args.label_dir,args.image_dir, transformations, 180, 4, train=False)
         test_loader = torch.utils.data.DataLoader(
             dataset=dataset,
@@ -132,7 +127,8 @@ if __name__ == '__main__':
                 idx_tensor = torch.FloatTensor(idx_tensor).cuda(gpu)
                 avg_error = .0
                                 
-                with torch.no_grad():           
+                with torch.no_grad():
+                    #iter_gaze = 0
                     for j, (images, labels, cont_labels, name) in enumerate(test_loader):
                         images = Variable(images).cuda(gpu)
                         total += cont_labels.size(0)
@@ -160,6 +156,8 @@ if __name__ == '__main__':
                         for p,y,pl,yl in zip(pitch_predicted,yaw_predicted,label_pitch,label_yaw):
                             avg_error += angular(gazeto3d([p,y]), gazeto3d([pl,yl]))        
 
+                        #iter_gaze += 1
+
                         if (j+1) % 1000 == 0:
                             print('Iter [%d/%d] Losses: '
                                 'Mean Angular Error %.4f' % (
@@ -169,19 +167,21 @@ if __name__ == '__main__':
                                     #sum_loss_pitch_gaze/iter_gaze,
                                     #sum_loss_yaw_gaze/iter_gaze
                                 )
-                                )                    
+                                )
+
                 x = ''.join(filter(lambda i: i.isdigit(), epochs))
+                #epoch_list.append(x)
                 avg_MAE.append(avg_error/total)
-                loger = f"[---{args.dataset}] Total Num:{total},MAE:{avg_error/total}\n"
+                #loger = f"[{epochs}---{args.dataset}] Total Num:{total},MAE:{avg_error/total}\n"
+                print(f"[---{args.dataset}] Total Num:{total},MAE:{avg_error/total}\n")
                 #outfile.write(loger)
-                p#rint(loger)
-        print("Done in", time()-t_ini, "s")
+                #print(loger)
         
-        # fig = plt.figure(figsize=(14, 8))        
-        # plt.xlabel('epoch')
-        # plt.ylabel('avg')
-        # plt.title('Gaze angular error')
-        # plt.legend()
-        # plt.plot(epoch_list, avg_MAE, color='k', label='mae')
-        # fig.savefig(os.path.join(evalpath,data_set+".png"), format='png')
-        # plt.show()
+        fig = plt.figure(figsize=(14, 8))        
+        plt.xlabel('epoch')
+        plt.ylabel('avg')
+        plt.title('Gaze angular error')
+        plt.legend()
+        plt.plot(epoch_list, avg_MAE, color='k', label='mae')
+        fig.savefig(os.path.join(evalpath,data_set+".png"), format='png')
+        plt.show()
