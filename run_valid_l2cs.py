@@ -169,7 +169,7 @@ if __name__ == '__main__':
 
                         if (j+1) % 1000 == 0:
                             print('Iter [%d/%d] Losses: '
-                                'pitch, yaw, MAE %.4f' % (
+                                 'pitch %.4f, yaw %.4f, MAE %.4f' % (
                                     j+1,
                                     len(dataset)//batch_size,
                                     avg_pitch_error/total,
