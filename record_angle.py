@@ -21,6 +21,8 @@ from model import L2CS
 from loader import FileVideoStream
 import threading
 
+torch.set_num_threads(4)
+
 class VideoCaptureTreading:
     def __init__(self, src=0, width=640, height=480):
         self.src = src
@@ -104,14 +106,14 @@ def getArch(arch,bins):
 
 
 def dump_pitch_yaw(fn, model):
-    #print("fn", fn)
+    # print("fn", fn)
     cap = FileVideoStream(fn).start()
     time.sleep(0.1)
     #cap = cv2.VideoCapture(fn)
 
     out_dir = "/".join(fn.split("/")[:-2])
     out_dir += "/rpy/"
-    #print("outdir", out_dir)
+    # print("outdir", out_dir)
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
 
@@ -126,6 +128,7 @@ def dump_pitch_yaw(fn, model):
             f.write("_py in degrees\n")
             start_fps = time.time()
 
+            i = 0
             while cap.more():
                 frame = cap.read()
                 if frame is None:
@@ -136,58 +139,65 @@ def dump_pitch_yaw(fn, model):
                 if faces is not None: 
                     #cap.stop()
                     #return faces
-                    for box, landmarks, score in faces:
-                        
-                        if score < .95:
-                            continue
-                        x_min=int(max([0, box[0]]))
-                        y_min=int(max([0, box[1]]))
-                        #if x_min < 0:
-                        #    x_min = 0
-                        #y_min=int(box[1])
-                        #if y_min < 0:
-                        #    y_min = 0
-                        x_max=int(box[2])
-                        y_max=int(box[3])
-                        #bbox_width = x_max - x_min
-                        #bbox_height = y_max - y_min
-                        # x_min = max(0,x_min-int(0.2*bbox_height))
-                        # y_min = max(0,y_min-int(0.2*bbox_width))
-                        # x_max = x_max+int(0.2*bbox_height)
-                        # y_max = y_max+int(0.2*bbox_width)
-                        # bbox_width = x_max - x_min
-                        # bbox_height = y_max - y_min
+                    #i_face = 0
+                    ind = np.argmax([fc[2] for fc in faces])
+                    #for box, landmarks, score in faces:
+                    box, landmarks, score = faces[ind]
+                    if score < .95:
+                        continue
+                    # i_face += 1
+                    # if i_face > 1:
+                    #     print(i, i_face, len(faces), score)
+                
+                    x_min=int(max([0, box[0]]))
+                    y_min=int(max([0, box[1]]))
+                    #if x_min < 0:
+                    #    x_min = 0
+                    #y_min=int(box[1])
+                    #if y_min < 0:
+                    #    y_min = 0
+                    x_max=int(box[2])
+                    y_max=int(box[3])
+                    #bbox_width = x_max - x_min
+                    #bbox_height = y_max - y_min
+                    # x_min = max(0,x_min-int(0.2*bbox_height))
+                    # y_min = max(0,y_min-int(0.2*bbox_width))
+                    # x_max = x_max+int(0.2*bbox_height)
+                    # y_max = y_max+int(0.2*bbox_width)
+                    # bbox_width = x_max - x_min
+                    # bbox_height = y_max - y_min
 
-                        # Crop image
-                        img = frame[y_min:y_max, x_min:x_max]
-                        img = cv2.resize(img, (224, 224))
-                        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                        im_pil = Image.fromarray(img)
-                        img=transformations(im_pil)
-                        img  = Variable(img).cuda(gpu)
-                        img  = img.unsqueeze(0) 
-                        
-                        # gaze prediction
-                        gaze_pitch, gaze_yaw = model(img)
-                        
-                        pitch_predicted = softmax(gaze_pitch)
-                        yaw_predicted = softmax(gaze_yaw)
-                        
-                        # Get continuous predictions in degrees.
-                        pitch_predicted = torch.sum(pitch_predicted.data[0] * idx_tensor) * 4 - 180
-                        yaw_predicted = torch.sum(yaw_predicted.data[0] * idx_tensor) * 4 - 180
-                        
-                        pitch_predicted= pitch_predicted.cpu().detach().numpy()#* np.pi/180.0
-                        yaw_predicted= yaw_predicted.cpu().detach().numpy()#* np.pi/180.0
+                    # Crop image
+                    img = frame[y_min:y_max, x_min:x_max]
+                    img = cv2.resize(img, (224, 224))
+                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    im_pil = Image.fromarray(img)
+                    img=transformations(im_pil)
+                    img  = Variable(img).cuda(gpu)
+                    img  = img.unsqueeze(0) 
+                    
+                    # gaze prediction
+                    gaze_pitch, gaze_yaw = model(img)
+                    
+                    pitch_predicted = softmax(gaze_pitch)
+                    yaw_predicted = softmax(gaze_yaw)
+                    
+                    # Get continuous predictions in degrees.
+                    pitch_predicted = torch.sum(pitch_predicted.data[0] * idx_tensor) * 4 - 180
+                    yaw_predicted = torch.sum(yaw_predicted.data[0] * idx_tensor) * 4 - 180
+                    
+                    pitch_predicted= pitch_predicted.cpu().detach().numpy()#* np.pi/180.0
+                    yaw_predicted= yaw_predicted.cpu().detach().numpy()#* np.pi/180.0
 
-                        #print(pitch_predicted,yaw_predicted)
-                        f.write(f"{pitch_predicted:.3f}   {yaw_predicted:.3f}")
-                        f.write(f"  {box[0]:.3f}   {box[1]:.3f}   {box[2]:.3f}   {box[3]:.3f}")
-                        for lr in landmarks.ravel():
-                            f.write(f"  {lr:.3f}")
-                        f.write(f"  {score:.2f}\n")
-                        #draw_gaze(x_min,y_min,bbox_width, bbox_height,frame,(pitch_predicted,yaw_predicted),color=(0,0,255))
-                        #cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0,255,0), 1)
+                    #print(pitch_predicted,yaw_predicted)
+                    f.write(f"{pitch_predicted:.3f}   {yaw_predicted:.3f}")
+                    f.write(f"  {box[0]:.3f}   {box[1]:.3f}   {box[2]:.3f}   {box[3]:.3f}")
+                    for lr in landmarks.ravel():
+                        f.write(f"  {lr:.3f}")
+                    f.write(f"  {score:.2f}\n")
+                    i +=1
+                    #draw_gaze(x_min,y_min,bbox_width, bbox_height,frame,(pitch_predicted,yaw_predicted),color=(0,0,255))
+                    #cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0,255,0), 1)
                 #myFPS = 1.0 / (time.time() - start_fps)
                 #print("FPS:", myFPS)
                 #cv2.putText(frame, 'FPS: {:.1f}'.format(myFPS), (10, 20),cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), 1, cv2.LINE_AA)
@@ -200,6 +210,8 @@ def dump_pitch_yaw(fn, model):
             print("FPS:", myFPS)
         #print("Video getter", cap.cnt)
         cap.stop()
+    
+    print(f"Wrote {i} lines")
         
 if __name__ == '__main__':
     args = parse_args()
@@ -238,8 +250,9 @@ if __name__ == '__main__':
         ll = f.read()
         vid_list = ll.splitlines()
 
-    for fn in vid_list:
+    for fn in vid_list[586:]:#5354:5356]:
         print("fn", fn)
+        # if int(fn.split("/")[-5]) > 2 and int(fn.split("/")[-5]) < 5:
         lmks = dump_pitch_yaw(fn, model)
   
 
