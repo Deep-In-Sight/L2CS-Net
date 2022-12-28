@@ -161,7 +161,8 @@ if __name__ == '__main__':
                         yaw_predicted = yaw_predicted*np.pi/180
 
                         for p,y,pl,yl in zip(pitch_predicted,yaw_predicted,label_pitch,label_yaw):
-                            avg_error += angular(gazeto3d([p,y]), gazeto3d([pl,yl]))        
+                            avg_error += angular(gazeto3d([p,y]), gazeto3d([pl,yl]))
+                            print(gazeto3d([p,y]), gazeto3d([pl,yl]))
 
                         if (j+1) % 1000 == 0:
                             print('Iter [%d/%d] Losses: '
