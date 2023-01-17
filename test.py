@@ -20,10 +20,10 @@ def parse_args():
     # NIA2022
     parser.add_argument(
         '--image_dir', dest='image_dir', help='Directory path for gaze images.',
-        default='datasets/nia2022/Image', type=str)
+        default='../data/l2cs_data/Image', type=str)
     parser.add_argument(
         '--label_dir', dest='label_dir', help='Directory path for gaze labels.',
-        default='datasets/nia2022/Label/train.label', type=str)
+        default='../data/l2cs_data/Label/train.label', type=str)
 
     # Important args -------------------------------------------------------------------------------------------------------
     # ----------------------------------------------------------------------------------------------------------------------
@@ -92,9 +92,9 @@ if __name__ == '__main__':
     
     if data_set=="nia2022":
         
-        gaze_dataset=datasets.NIA2022(args.label_dir,args.image_dir, transformations, 180, 4, train=False)
+        dataset=datasets.NIA2022(args.label_dir,args.image_dir, transformations, 180, 4, train=False)
         test_loader = torch.utils.data.DataLoader(
-            dataset=gaze_dataset,
+            dataset=dataset,
             batch_size=batch_size,
             shuffle=False,
             num_workers=4,
@@ -127,7 +127,8 @@ if __name__ == '__main__':
                 idx_tensor = torch.FloatTensor(idx_tensor).cuda(gpu)
                 avg_error = .0
                                 
-                with torch.no_grad():           
+                with torch.no_grad():
+                    #iter_gaze = 0
                     for j, (images, labels, cont_labels, name) in enumerate(test_loader):
                         images = Variable(images).cuda(gpu)
                         total += cont_labels.size(0)
@@ -154,13 +155,27 @@ if __name__ == '__main__':
 
                         for p,y,pl,yl in zip(pitch_predicted,yaw_predicted,label_pitch,label_yaw):
                             avg_error += angular(gazeto3d([p,y]), gazeto3d([pl,yl]))        
-                    
+
+                        #iter_gaze += 1
+
+                        if (j+1) % 100 == 0:
+                            print('Iter [%d/%d] Losses: '
+                                'Mean Angular Error %.4f' % (
+                                    j+1,
+                                    len(dataset)//batch_size,
+                                    avg_error/total
+                                    #sum_loss_pitch_gaze/iter_gaze,
+                                    #sum_loss_yaw_gaze/iter_gaze
+                                )
+                                )
+
                 x = ''.join(filter(lambda i: i.isdigit(), epochs))
-                epoch_list.append(x)
+                #epoch_list.append(x)
                 avg_MAE.append(avg_error/total)
-                loger = f"[{epochs}---{args.dataset}] Total Num:{total},MAE:{avg_error/total}\n"
-                outfile.write(loger)
-                print(loger)
+                #loger = f"[{epochs}---{args.dataset}] Total Num:{total},MAE:{avg_error/total}\n"
+                print(f"[---{args.dataset}] Total Num:{total},MAE:{avg_error/total}\n")
+                #outfile.write(loger)
+                #print(loger)
         
         fig = plt.figure(figsize=(14, 8))        
         plt.xlabel('epoch')

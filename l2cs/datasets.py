@@ -183,7 +183,6 @@ class NIA2022(Dataset):
                     if abs((label[0])) <= angle and abs((label[1])) <= angle:
                         self.lines.append(line)
                     
-                        
         print("{} items removed from dataset that have an angle > {}".format(self.orig_list_len-len(self.lines), angle))
 
     def __len__(self):
